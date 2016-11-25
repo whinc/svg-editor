@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>svg-editor</title>
+    <script src="js/core.js"></script>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+        
+        #mask-layer {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 0px;
+            height: 0px;
+            background-color: blue;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div>
+        <svg id="svg-main" width="600" height="400">
+            <line x1="0" y1="50" x2="100" y2="100" stroke="red"></line>
+            <circle cx="200" cy="200" r="50"></circle>
+            <circle cx="400" cy="200" r="50"></circle>
+            <path d="M0 0 L 50 50" stroke="red"></path>
+        </svg>
+        <div id="mask-layer"></div>
+    </div>
+    <div>
+        stroke: <input id="stroke-input" type="text" placeholder="#000"/>
+        stroke-width: <input id="stroke-width-input" type="text" placeholder="0"/>
+    </div>
+</body>
+</html>
