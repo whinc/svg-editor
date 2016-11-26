@@ -1,0 +1,16 @@
+
+        * {
+            padding: 0;
+            margin: 0;
+        }
+        
+        #mask-layer {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 0px;
+            height: 0px;
+            background-color: blue;
+            opacity: 0.3;
+            pointer-events: none;
+        }

@@ -3,25 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>svg-editor</title>
+    <script src="js/utils.js"></script>
     <script src="js/core.js"></script>
-    <style>
-        * {
-            padding: 0;
-            margin: 0;
-        }
-        
-        #mask-layer {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 0px;
-            height: 0px;
-            background-color: blue;
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div>
@@ -34,8 +18,6 @@
         <div id="mask-layer"></div>
     </div>
     <div>
-        stroke: <input id="stroke-input" type="text" placeholder="#000"/>
-        stroke-width: <input id="stroke-width-input" type="text" placeholder="0"/>
     </div>
 </body>
 </html>
