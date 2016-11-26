@@ -1,4 +1,4 @@
-
+    
 window.addEventListener('DOMContentLoaded', function (e) {
 
     /**
@@ -17,6 +17,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
 
     var SvgBase = (function () {
         function SvgBase() {
+            this.createTime = Date.now();
         }
 
         SvgBase.prototype.createElement = function (tagName) {
@@ -35,13 +36,11 @@ window.addEventListener('DOMContentLoaded', function (e) {
     })();
 
     var SvgCircle = (function (Parent) {
-        /* private */
-        var _el = null,
-            _options = null;
+        /* shared private field and function */
 
         /* constructor */
         function SvgCircle(options) {
-            _options = options || {
+            this.options = options || {
                 cx: 50,
                 cy: 50,
                 r: 50,
@@ -51,21 +50,22 @@ window.addEventListener('DOMContentLoaded', function (e) {
 
             Parent.call(this);
 
-            _el = this.createElement('circle');
-            _el.dataWrapper = this;         // 保存当前实例到元素中
-            utils.setAttrs(_el, _options);
+            this.el = this.createElement('circle');
+            utils.setAttrs(this.el, this.options);
+            this.el.dataWrapper = this;         // 保存当前实例到元素中
         }
 
         SvgCircle.prototype = new Parent();
         SvgCircle.prototype.constructor = SvgCircle;
 
         SvgCircle.prototype.getElement = function () {
-            return _el;
+            return this.el;
         }
 
         SvgCircle.prototype.toString = function () {
-            return 'SvgCircle[' + Object.keys(_options).map(function (key) {
-                return key + ": " + _el.getAttribute(key);
+            var el = this.el;
+            return 'SvgCircle[' + Object.keys(this.options).map(function (key) {
+                return key + ": " + el.getAttribute(key);
             }).join(', ') + ']';
         }
 
@@ -75,6 +75,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
     // SVG 根对象， 提供操作 SVG 的接口
     window.svgRoot = (function (id) {
         var self = document.querySelector('#' + id),
+            svgObjects = [],
             activedElements = [],
             mousePressed = false;
 
@@ -109,7 +110,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
          */
         function onClick(event) {
             console.log(event.type);
-            // 清除选中元素
+            // 点击空白地方，清除选中元素
             if (event.target === self) {
                 activedElements = [];
             }
@@ -118,13 +119,6 @@ window.addEventListener('DOMContentLoaded', function (e) {
                 console.log(event.target.dataWrapper.toString());
             }
 
-            // switch (event.target.nodeName) {
-            //     case SvgType.CIRCLE:
-            //         ['stroke', 'stroke-width', 'cx', 'cy', 'r'].forEach(function (key) {
-            //             console.log("%s: %O", key, event.target.getAttribute(key));
-            //         })
-            //         break;
-            // }
         }
 
 
@@ -132,12 +126,15 @@ window.addEventListener('DOMContentLoaded', function (e) {
             console.log(event.type);
             mousePressed = true;
             activedElements = [event.target];
+            window.maskLayer.cover(event.target.dataWrapper);
         }
 
         function onMouseMove(event) {
             console.log(event.type);
             var mouseLeftBtnPressed = (event.buttons & 0x1 === 1);
             if (mousePressed && mouseLeftBtnPressed) {
+                window.maskLayer.cover(event.target.dataWrapper);
+
                 activedElements.forEach(function (el) {
                     switch (el.nodeName) {
                         case SvgType.CIRCLE:
@@ -155,34 +152,25 @@ window.addEventListener('DOMContentLoaded', function (e) {
             console.log(event.type);
 
             mousePressed = false;
+            window.maskLayer.cover(event.target.dataWrapper);
         }
     })('svg-main');
 
-    maskLayer = (function (id) {
+    window.maskLayer = (function (id) {
         var self = document.querySelector('#' + id);
 
         return {
             cover: cover
         };
 
-        function cover(target) {
-            if (!target instanceof Element) { return; }
+        function cover(svgObj) {
+            if (!svgObj) {return;}
 
             switch (true) {
-                case target instanceof SVGLineElement:
-                    var x1 = utils.getSvgLength(target.x1),
-                        y1 = utils.getSvgLength(target.y1),
-                        x2 = utils.getSvgLength(target.x2),
-                        y2 = utils.getSvgLength(target.y2);
-                    self.style.left = x1 + 'px';
-                    self.style.top = y1 + 'px';
-                    self.style.width = (x2 - x1) + 'px';
-                    self.style.height = (y2 - y1) + 'px';
-                    break;
-                case target instanceof SVGCircleElement:
-                    var cx = utils.getSvgLength(target.cx),
-                        cy = utils.getSvgLength(target.cy),
-                        r = utils.getSvgLength(target.r);
+                case svgObj instanceof SvgCircle:
+                    var cx = svgObj.getElement().getAttribute('cx'),
+                        cy = svgObj.getElement().getAttribute('cy'),
+                         r = svgObj.getElement().getAttribute('r');
                     self.style.left = (cx - r) + 'px';
                     self.style.top = (cy - r) + 'px';
                     self.style.height = self.style.width = (2 * r) + 'px';
@@ -190,4 +178,8 @@ window.addEventListener('DOMContentLoaded', function (e) {
             }
         }
     })('mask-layer');
+
+    // 添加测试元素
+    window.svgRoot.addElement('circle');
+    window.svgRoot.addElement('circle');
 });
