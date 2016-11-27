@@ -39,6 +39,21 @@ window.addEventListener('DOMContentLoaded', function (e) {
             };
         }
 
+        SvgBase.prototype.updateAttr = function (key, value) {
+            utils.setAttrs(this.getElement(), {
+                key: value
+            });
+        }
+
+        /**
+         * 属性变化时被调用
+         */
+        SvgBase.prototype.onAttrChanged = function (data) {
+            var attrs = { };
+            attrs[data.key] = data.value;
+            utils.setAttrs(this.getElement(), attrs);
+        }
+
         return SvgBase;
     })();
 
@@ -90,13 +105,50 @@ window.addEventListener('DOMContentLoaded', function (e) {
     })(SvgBase);
 
     var attrsEditor = (function () {
-        var tableDiv = document.querySelector('.table');
+        var tableDiv = document.querySelector('.table'),
+            itemChangeListeners = []
+        ;
 
         return {
+
             addItem: addItem,
             addItems: addItems,
             removeItem: removeItem,
+            addItemChangeListener: addItemChangeListener,
+            removeItemChangeListener: removeItemChangeListener,
             clear: clear
+        }
+
+        /**
+         * 添加属性变化监听者（必须实现了 EventTarget 接口），
+         * 每当属性编辑器中属性发生变化时，会向这些监听者发送 'attr-change' 事件，事件包含了新的属性值
+         * 
+         * 事件的 detail 数据结构如下：
+         * event.detail = { key: string, value: string}
+         */
+        function addItemChangeListener (listener) {
+            if (!listener instanceof EventTarget) { return; }
+
+            var exist = itemChangeListeners.some(function (item) {
+                return item === listener;
+            });
+
+            if (!exist) {
+                itemChangeListeners.push(listener);
+            }
+        }
+
+        function removeItemChangeListener (listener) {
+            var foundIndex = -1;
+            for (var i = 0; i < itemChangeListeners.length; ++i) {
+                if (itemChangeListeners[i] === listener) {
+                    foundIndex = i;
+                    break;
+                }
+            }
+            if (foundIndex !== -1) {
+                itemChangeListeners.splice(foundIndex, 1);
+            }
         }
 
         function clear () {
@@ -125,9 +177,23 @@ window.addEventListener('DOMContentLoaded', function (e) {
         }
 
         function addItem(key, value) {
-            var rowDiv = tableDiv.firstElementChild.cloneNode(true);
-            rowDiv.firstElementChild.firstChild.data = key;
-            rowDiv.lastElementChild.firstElementChild.value = value;
+            var rowDiv = tableDiv.firstElementChild.cloneNode(true),
+                labelText = rowDiv.firstElementChild.firstChild,
+                valueInput = rowDiv.lastElementChild.firstElementChild
+                ;
+            labelText.data = key;
+            valueInput.value = value;
+            valueInput.addEventListener('change', function (e) {
+                // input 标签内容变化时通知所有监听者
+                itemChangeListeners.forEach(function (listener) {
+                    if (typeof listener.onAttrChanged === 'function') {
+                        listener.onAttrChanged({
+                            key: key,
+                            value: e.target.value
+                        });
+                    }
+                });
+            });
             tableDiv.appendChild(rowDiv);
             return rowDiv;
         }
@@ -138,19 +204,15 @@ window.addEventListener('DOMContentLoaded', function (e) {
     window.svgRoot = (function (id, attrsEditor) {
         var self = document.querySelector('#' + id),
             svgObjects = [],
-            activedElements = [],
+            activedSvgBase = [],
             mousePressed = false;
 
         self.addEventListener('mousedown', onMouseDown);
         self.addEventListener('mousemove', onMouseMove);
         self.addEventListener('mouseup', onMouseUp);
-        self.addEventListener('click', onClick);
 
         return {
-            addElement: addElement,
-            getActivedElements: function () {
-                return activedElements;
-            }
+            addElement: addElement
         };
 
         function addElement(type) {
@@ -167,29 +229,27 @@ window.addEventListener('DOMContentLoaded', function (e) {
             }
         }
 
-        /**
-         * 点击 SVG 元素时触发
-         */
-        function onClick(event) {
-            console.log(event.type);
-            // 点击空白地方，清除选中元素
-            if (event.target === self) {
-                activedElements = [];
-            }
 
-            var svgBase = null;
-            if (svgBase = event.target.dataWrapper) {
-                var supportAttrs = svgBase.getSupportAttrs();
-                attrsEditor.clear();
-                attrsEditor.addItems(supportAttrs);
-            }
+        function clearActivedSvgBase () {
+            activedSvgBase.forEach(function (svgBase) {
+                attrsEditor.removeItemChangeListener(svgBase);
+            });
+            activedSvgBase.length = 0;
         }
-
 
         function onMouseDown(event) {
             console.log(event.type);
             mousePressed = true;
-            activedElements = [event.target];
+
+            clearActivedSvgBase();
+            var svgBase = event.target.dataWrapper;
+            if (svgBase) {
+                activedSvgBase.push(svgBase);
+                var supportAttrs = svgBase.getSupportAttrs();
+                attrsEditor.clear();
+                attrsEditor.addItems(supportAttrs);
+                attrsEditor.addItemChangeListener(svgBase);
+            }
             window.maskLayer.cover(event.target.dataWrapper);
         }
 
@@ -199,7 +259,8 @@ window.addEventListener('DOMContentLoaded', function (e) {
             if (mousePressed && mouseLeftBtnPressed) {
                 window.maskLayer.cover(event.target.dataWrapper);
 
-                activedElements.forEach(function (el) {
+                activedSvgBase.forEach(function (svgBase) {
+                    var el = svgBase.getElement();
                     switch (el.nodeName) {
                         case SvgType.CIRCLE:
                             utils.setAttrs(el, {
