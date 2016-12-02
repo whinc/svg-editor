@@ -13,16 +13,15 @@ var SvgType = {
 };
 
 var SvgBase = (function () {
+    /* constructor */
     function SvgBase() {
         this.createTime = Date.now();
     }
 
+    /* 实例方法 */
+
     SvgBase.prototype.createElement = function (tagName) {
         return document.createElementNS('http://www.w3.org/2000/svg', tagName);
-    }
-
-    SvgBase.prototype.getElement = function () {
-        throw new Error('unimplemented');
     }
 
     SvgBase.prototype.toString = function () {
@@ -42,6 +41,8 @@ var SvgBase = (function () {
         });
     }
 
+    /* 消息接口 */
+
     /**
      * 属性变化时被调用
      */
@@ -49,6 +50,12 @@ var SvgBase = (function () {
         var attrs = {};
         attrs[data.key] = data.value;
         utils.setAttrs(this.getElement(), attrs);
+    }
+
+    /* 抽象接口 */
+
+    SvgBase.prototype.getElement = function () {
+        throw new Error('unimplemented');
     }
 
     return SvgBase;
@@ -77,9 +84,20 @@ var SvgCircle = (function (Parent) {
     SvgCircle.prototype = new Parent();
     SvgCircle.prototype.constructor = SvgCircle;
 
+    /* 实例方法 */
+    SvgCircle.prototype.toString = function () {
+        var el = this.el;
+        return 'SvgCircle[' + Object.keys(this.options).map(function (key) {
+            return key + ": " + el.getAttribute(key);
+        }).join(', ') + ']';
+    }
+
+    /* 抽象接口实现 */
+
     SvgCircle.prototype.getElement = function () {
         return this.el;
     }
+
     SvgCircle.prototype.getSupportAttrs = function () {
         var el = this.el;
         var supportAttrs = Parent.prototype.getSupportAttrs.call(this);
@@ -91,12 +109,6 @@ var SvgCircle = (function (Parent) {
         return supportAttrs;
     }
 
-    SvgCircle.prototype.toString = function () {
-        var el = this.el;
-        return 'SvgCircle[' + Object.keys(this.options).map(function (key) {
-            return key + ": " + el.getAttribute(key);
-        }).join(', ') + ']';
-    }
 
     return SvgCircle;
 })(SvgBase);

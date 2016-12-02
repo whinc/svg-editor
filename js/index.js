@@ -7,10 +7,10 @@ window.addEventListener('DOMContentLoaded', function (e) {
             itemChangeListeners = [],
             // 当前绑定的 SvgBase 对象
             _svgBase = null
-        ;
+            ;
 
         /* 将属性编辑与 SVG 元素双向绑定 */
-        function bind (svgBase) {
+        function bind(svgBase) {
             if (_svgBase) {
                 unbind(_svgBase);
             }
@@ -20,7 +20,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
             _svgBase = svgBase;
         }
 
-        function unbind (svgBase) {
+        function unbind(svgBase) {
             clear();
             removeItemChangeListener(svgBase);
         }
@@ -32,7 +32,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
          * 事件的 detail 数据结构如下：
          * event.detail = { key: string, value: string}
          */
-        function addItemChangeListener (listener) {
+        function addItemChangeListener(listener) {
             if (!listener instanceof EventTarget) { return; }
 
             var exist = itemChangeListeners.some(function (item) {
@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
             }
         }
 
-        function removeItemChangeListener (listener) {
+        function removeItemChangeListener(listener) {
             var foundIndex = -1;
             for (var i = 0; i < itemChangeListeners.length; ++i) {
                 if (itemChangeListeners[i] === listener) {
@@ -57,13 +57,13 @@ window.addEventListener('DOMContentLoaded', function (e) {
             }
         }
 
-        function clear () {
+        function clear() {
             var proto = tableDiv.firstElementChild;
             tableDiv.innerHTML = '';
             tableDiv.appendChild(proto);
         }
 
-        function addItems (attrs) {
+        function addItems(attrs) {
             Object.keys(attrs).forEach(function (key) {
                 addItem(key, attrs[key]);
             });
@@ -111,22 +111,35 @@ window.addEventListener('DOMContentLoaded', function (e) {
 
     })();
 
+    // 形状选择器
     var shapeSelector = (function () {
         var circleDiv = document.querySelector('#shape-circle');
 
+        // 注册拖拽事件
+        circleDiv.addEventListener('dragstart', onDragStart);
         circleDiv.addEventListener('dragend', onDragEnd);
 
+        // 拖拽图形时，拖拽点与正方形中心点的 X 和 Y 轴偏移量
+        var offsetX = 0, 
+            offsetY = 0;
+        function onDragStart(e) {
+            var rect = e.target.getBoundingClientRect();
+            offsetX = e.clientX - (rect.right + rect.left) / 2;
+            offsetY = e.clientY - (rect.bottom + rect.top) / 2;
+        }
+
         function onDragEnd(e) {
-            if (e.clientX >= svgMain.clientLeft 
-                && e.clientX <= svgMain.clientLeft + svgMain.clientWidth
-                && e.clientY >= svgMain.clientTop
-                && e.clientY <= svgMain.clientTop + svgMain.clientHeight) {
-                    window.svgRoot.addElement('circle', {
-                        cx: e.clientX - svgMain.clientLeft,
-                        cy: e.clientY - svgMain.clientTop,
-                        r : 50
-                    });
-                }
+            var svgRect = svgMain.getBoundingClientRect();
+
+            if (e.clientX >= svgRect.left && e.clientX <= svgRect.right
+                && e.clientY >= svgRect.top && e.clientY <= svgRect.bottom) {
+                window.svgRoot.addElement('circle', {
+                    cx: e.clientX - svgRect.left - offsetX,
+                    cy: e.clientY - svgRect.top - offsetY,
+                    r: 50
+                });
+
+            }
         }
     })();
 
@@ -160,7 +173,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
         }
 
 
-        function clearActivedSvgBase () {
+        function clearActivedSvgBase() {
             activedSvgBase.forEach(function (svgBase) {
                 attrsEditor.unbind(svgBase);
             });
