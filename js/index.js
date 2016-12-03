@@ -1,18 +1,4 @@
 
-function getPageOffset() {
-    return { 
-        x: window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft, 
-        y: window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop, 
-    };
-}
-
-// 获取视口大小
-function getViewportSize () {
-    return {
-        width: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-        height: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
-    };
-}
 
 window.addEventListener('DOMContentLoaded', function (e) {
     var svgMain = document.querySelector('#svg-main');
@@ -73,9 +59,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
         }
 
         function clear() {
-            var proto = tableDiv.firstElementChild;
             tableDiv.innerHTML = '';
-            tableDiv.appendChild(proto);
         }
 
         function addItems(attrs) {
@@ -98,13 +82,17 @@ window.addEventListener('DOMContentLoaded', function (e) {
         }
 
         function addItem(key, value) {
-            var rowDiv = tableDiv.firstElementChild.cloneNode(true),
-                labelText = rowDiv.firstElementChild.firstChild,
-                valueInput = rowDiv.lastElementChild.firstElementChild
-                ;
-            labelText.data = key;
-            valueInput.value = value;
-            valueInput.addEventListener('change', function (e) {
+            var rowDiv = document.createElement('div');
+            rowDiv.classList.add('table-row');
+            rowDiv.innerHTML = '<div class="table-cell"></div>'
+                + '<div class="table-cell">'
+                + '<input type="text"/>'
+                + '</div>';
+
+            rowDiv.firstElementChild.textContent = key;
+            rowDiv.lastElementChild.firstElementChild.value = value;
+
+            rowDiv.lastElementChild.firstElementChild.addEventListener('change', function (e) {
                 // input 标签内容变化时通知所有监听者
                 itemChangeListeners.forEach(function (listener) {
                     if (typeof listener.onAttrChanged === 'function') {
@@ -248,11 +236,11 @@ window.addEventListener('DOMContentLoaded', function (e) {
 
             switch (true) {
                 case svgObj instanceof SvgCircle:
-                    var rect = svgObj.getElement().getBoundingClientRect();
+                    var rect = utils.getBoundingClientRect(svgObj.getElement());
                     self.style.left = rect.left + 'px';
                     self.style.top = rect.top + 'px';
-                    self.style.width = (rect.right - rect.left) + 'px';
-                    self.style.height = (rect.bottom - rect.top) + 'px';
+                    self.style.width = rect.width + 'px';
+                    self.style.height = rect.height + 'px';
                     break
             }
         }
