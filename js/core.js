@@ -12,6 +12,9 @@ var SvgType = {
     }
 };
 
+/**
+ * SVG 元素封装类型的基类型
+ */
 var SvgBase = (function () {
     /* constructor */
     function SvgBase() {
@@ -54,6 +57,10 @@ var SvgBase = (function () {
 
     /* 抽象接口 */
 
+    /**
+     * 获取保存的 SVGElement 对象
+     * 每个封装类型对象的引用都会保存在 SVGElement.svgBase 属性中
+     */
     SvgBase.prototype.getElement = function () {
         throw new Error('unimplemented');
     }
@@ -78,7 +85,7 @@ var SvgCircle = (function (Parent) {
 
         this.el = this.createElement('circle');
         utils.setAttrs(this.el, this.options);
-        this.el.dataWrapper = this;         // 保存当前实例到元素中
+        this.el.svgBase = this;         // 保存当前实例到元素中
     }
 
     SvgCircle.prototype = new Parent();

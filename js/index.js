@@ -1,11 +1,17 @@
+window.addEventListener('DOMContentLoaded', onDOMContentLoaded);
 
 
-window.addEventListener('DOMContentLoaded', function (e) {
-    var svgMain = document.querySelector('#svg-main');
+function onDOMContentLoaded () {
+    var centerDiv = document.querySelector('div.center'),
+        svgMain = centerDiv.querySelector('#svg-main')
+        rightDiv = document.querySelector('div.right'),
+        tableDiv = rightDiv.querySelector('.table')
+        ;
 
-    var attrsEditor = (function () {
-        var tableDiv = document.querySelector('.table'),
-            itemChangeListeners = [],
+    var attrsEditor, svgEditor, shapeSelector, activeLayer; 
+
+    attrsEditor = (function (tableDiv) {
+        var itemChangeListeners = [],
             // 当前绑定的 SvgBase 对象
             _svgBase = null
             ;
@@ -112,10 +118,10 @@ window.addEventListener('DOMContentLoaded', function (e) {
             unbind: unbind,
         }
 
-    })();
+    })(tableDiv);
 
     // 形状选择器
-    var shapeSelector = (function () {
+    shapeSelector = (function () {
         var circleDiv = document.querySelector('#shape-circle');
 
         // 注册拖拽事件
@@ -136,7 +142,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
 
             if (e.clientX >= svgRect.left && e.clientX <= svgRect.right
                 && e.clientY >= svgRect.top && e.clientY <= svgRect.bottom) {
-                window.svgRoot.addElement('circle', {
+                svgEditor.addElement('circle', {
                     cx: e.clientX - svgRect.left - offsetX,
                     cy: e.clientY - svgRect.top - offsetY,
                     r: 50
@@ -146,10 +152,9 @@ window.addEventListener('DOMContentLoaded', function (e) {
         }
     })();
 
-    // SVG 根对象， 提供操作 SVG 的接口
-    window.svgRoot = (function (id, attrsEditor) {
-        var self = document.querySelector('#' + id),
-            svgObjects = [],
+    svgEditor = (function (svgMain, attrsEditor) {
+        var self = svgMain,
+            svgBaseects = [],
             activedSvgBase = [],
             mousePressed = false;
 
@@ -162,16 +167,16 @@ window.addEventListener('DOMContentLoaded', function (e) {
         };
 
         function addElement(type, options) {
-            var svgObj = null;
+            var svgBase = null;
             switch (type) {
                 case SvgType.CIRCLE:
-                    svgObj = new SvgCircle(options);
+                    svgBase = new SvgCircle(options);
                     break;
                 default:
                     break;
             }
-            if (svgObj) {
-                self.appendChild(svgObj.getElement());
+            if (svgBase) {
+                self.appendChild(svgBase.getElement());
             }
         }
 
@@ -188,19 +193,19 @@ window.addEventListener('DOMContentLoaded', function (e) {
             mousePressed = true;
 
             clearActivedSvgBase();
-            var svgBase = event.target.dataWrapper;
+            var svgBase = event.target.svgBase;
             if (svgBase) {
                 activedSvgBase.push(svgBase);
                 attrsEditor.bind(svgBase);
             }
-            window.maskLayer.cover(event.target.dataWrapper);
+            activeLayer.follow(event.target.svgBase);
         }
 
         function onMouseMove(event) {
             console.log(event.type);
             var mouseLeftBtnPressed = (event.buttons & 0x1 === 1);
             if (mousePressed && mouseLeftBtnPressed) {
-                window.maskLayer.cover(event.target.dataWrapper);
+                activeLayer.follow(event.target.svgBase);
 
                 activedSvgBase.forEach(function (svgBase) {
                     var el = svgBase.getElement();
@@ -220,33 +225,43 @@ window.addEventListener('DOMContentLoaded', function (e) {
             console.log(event.type);
 
             mousePressed = false;
-            window.maskLayer.cover(event.target.dataWrapper);
+            activeLayer.follow(event.target.svgBase);
         }
-    })('svg-main', attrsEditor);
+    })(svgMain, attrsEditor);
 
-    window.maskLayer = (function (id) {
-        var self = document.querySelector('#' + id);
+    // 元素激活层
+    activeLayer = (function () {
+        var layer = document.createElement('div');
+        layer.classList.add('active-layer');
+        centerDiv.appendChild(layer);
 
         return {
-            cover: cover
+            follow: follow
         };
 
-        function cover(svgObj) {
-            if (!svgObj) { return; }
+        /*
+         * 跟随目标
+         * @param {SvgBase|SVGElement} target - 目标对象
+         */
+        function follow(target) {
+            var svgBase = null;
+            if (target instanceof SvgBase) {
+                svgBase = target;
+            } else if (target instanceof SVGElement) {
+                svgBase = target.svgBase;
+            }
+
+            if (!svgBase) return;
 
             switch (true) {
-                case svgObj instanceof SvgCircle:
-                    var rect = utils.getBoundingClientRect(svgObj.getElement());
-                    self.style.left = rect.left + 'px';
-                    self.style.top = rect.top + 'px';
-                    self.style.width = rect.width + 'px';
-                    self.style.height = rect.height + 'px';
+                case svgBase instanceof SvgCircle:
+                    var rect = utils.getBoundingClientRect(svgBase.getElement());
+                    layer.style.left = rect.left + 'px';
+                    layer.style.top = rect.top + 'px';
+                    layer.style.width = rect.width + 'px';
+                    layer.style.height = rect.height + 'px';
                     break
             }
         }
-    })('mask-layer');
-
-    // 添加测试元素
-    // window.svgRoot.addElement('circle');
-    // window.svgRoot.addElement('circle');
-});
+    })();
+}
