@@ -1,4 +1,19 @@
 
+function getPageOffset() {
+    return { 
+        x: window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft, 
+        y: window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop, 
+    };
+}
+
+// 获取视口大小
+function getViewportSize () {
+    return {
+        width: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
+        height: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
+    };
+}
+
 window.addEventListener('DOMContentLoaded', function (e) {
     var svgMain = document.querySelector('#svg-main');
 
@@ -120,7 +135,7 @@ window.addEventListener('DOMContentLoaded', function (e) {
         circleDiv.addEventListener('dragend', onDragEnd);
 
         // 拖拽图形时，拖拽点与正方形中心点的 X 和 Y 轴偏移量
-        var offsetX = 0, 
+        var offsetX = 0,
             offsetY = 0;
         function onDragStart(e) {
             var rect = e.target.getBoundingClientRect();
@@ -233,12 +248,11 @@ window.addEventListener('DOMContentLoaded', function (e) {
 
             switch (true) {
                 case svgObj instanceof SvgCircle:
-                    var cx = svgObj.getElement().getAttribute('cx'),
-                        cy = svgObj.getElement().getAttribute('cy'),
-                        r = svgObj.getElement().getAttribute('r');
-                    self.style.left = (cx - r) + 'px';
-                    self.style.top = (cy - r) + 'px';
-                    self.style.height = self.style.width = (2 * r) + 'px';
+                    var rect = svgObj.getElement().getBoundingClientRect();
+                    self.style.left = rect.left + 'px';
+                    self.style.top = rect.top + 'px';
+                    self.style.width = (rect.right - rect.left) + 'px';
+                    self.style.height = (rect.bottom - rect.top) + 'px';
                     break
             }
         }

@@ -4,8 +4,35 @@
     margin: 0;
 }
 
-.show-border {
-    border: 1px dashed black;
+div.main {
+}
+
+/*左侧*/
+div.main .left {
+    float: left;
+    width: 15%;
+    min-width: 150px;
+}
+
+div.main .left > div {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/*右侧*/
+div.main .right {
+    float: left;
+    width: 20%;
+}
+
+
+/*中间*/
+div.main .center {
+    float: left;
+    width: 60%;
+    min-width: 300px;
+    border: 1px dashed gray;
 }
 
 #mask-layer {
@@ -18,22 +45,9 @@
     pointer-events: none;
 }
 
-div.left {
-    width: 30%;
-    float: left;
-    padding: 10px 10px;
-    box-sizing: border-box;
-}
-
-div.right {
-    clear: right;
-    width: 70%;
-}
-
 .table {
     display: table;
     width: 100%;
-    margin: 20px;
 }
 
 .table-row {
