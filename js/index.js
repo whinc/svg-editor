@@ -1,5 +1,5 @@
 window.addEventListener('DOMContentLoaded', onDOMContentLoaded);
-
+// window.addEventListener('beforeunload', onBeforeLoad);
 
 function onDOMContentLoaded () {
     var centerDiv = document.querySelector('div.center'),
@@ -142,12 +142,23 @@ function onDOMContentLoaded () {
 
             if (e.clientX >= svgRect.left && e.clientX <= svgRect.right
                 && e.clientY >= svgRect.top && e.clientY <= svgRect.bottom) {
-                svgEditor.addElement('circle', {
-                    cx: e.clientX - svgRect.left - offsetX,
-                    cy: e.clientY - svgRect.top - offsetY,
-                    r: 50
-                });
 
+                var attrs = {};
+                var svgShape = e.target.querySelector('svg').firstElementChild;
+                // 拷贝属性
+                for (var i = 0; i < svgShape.attributes.length; ++i) {
+                    var attr = svgShape.attributes[i];
+                    attrs[attr.name] = attr.value;
+                }
+                // 覆盖位置相关属性，使其位于恰当的位置上（根据shape类型）
+                if (svgShape.tagName === SvgType.CIRCLE) {
+                    utils.setAttrs(attrs, {
+                        cx: e.clientX - svgRect.left - offsetX,
+                        cy: e.clientY - svgRect.top - offsetY,
+                        r: 50
+                    });
+                }
+                svgEditor.addElement(svgShape.tagName, attrs);
             }
         }
     })();
@@ -163,7 +174,7 @@ function onDOMContentLoaded () {
         self.addEventListener('mouseup', onMouseUp);
 
         return {
-            addElement: addElement
+            addElement: addElement,
         };
 
         function addElement(type, options) {
